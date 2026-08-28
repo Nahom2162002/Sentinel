@@ -1,0 +1,16 @@
+{
+  "targets": [
+    {
+      "name": "Example Job Board Search",
+      "url": "https://example.com/jobs?tag=backend",
+      "selector": "#job-listings",
+      "webhook_url": null
+    },
+    {
+      "name": "Example Syllabus Page",
+      "url": "https://example.edu/courses/cs101/syllabus",
+      "selector": null,
+      "webhook_url": null
+    }
+  ]
+}

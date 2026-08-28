@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Sentinel &mdash; Dashboard{% endblock %}
+
+{% block header_actions %}
+{% if password_set %}
+<form method="post" action="{{ url_for('logout') }}">
+  <button type="submit" class="secondary">Log out</button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="panel">
+  <h2>Watched targets</h2>
+
+  {% if not targets %}
+    <p class="empty">No targets yet &mdash; add one below.</p>
+  {% endif %}
+
+  {% for target in targets %}
+    {% set state = target.state %}
+    <div class="target">
+      <div class="target-top">
+        <div>
+          <div class="target-name">{{ target.name }}</div>
+          <div class="target-url"><a href="{{ target.url }}" target="_blank" style="color: inherit;">{{ target.url }}</a></div>
+        </div>
+        {% if state %}
+          <span class="badge {{ state.last_status }}">{{ state.last_status }}</span>
+        {% else %}
+          <span class="badge never">never checked</span>
+        {% endif %}
+      </div>
+
+      {% if state %}
+        <div class="meta-row">Last checked: {{ state.last_checked[:19].replace('T', ' ') }} UTC</div>
+        {% if state.last_status == 'error' %}
+          <div class="diff-preview">{{ state.last_error }}</div>
+        {% elif state.last_diff %}
+          <div class="diff-preview">{{ state.last_diff }}</div>
+        {% endif %}
+      {% endif %}
+
+      <div class="target-actions">
+        <form class="inline" method="post" action="{{ url_for('check_one', target_id=target.id) }}">
+          <button type="submit" class="secondary">Check now</button>
+        </form>
+        <form class="inline" method="post" action="{{ url_for('delete_target', target_id=target.id) }}"
+              onsubmit="return confirm('Remove {{ target.name }}?');">
+          <button type="submit" class="danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+
+  {% if targets %}
+  <div class="actions">
+    <form method="post" action="{{ url_for('check_all') }}">
+      <button type="submit">Check all now</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Add a target</h2>
+  <form method="post" action="{{ url_for('add_target') }}">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" required placeholder="RemoteOK Software Jobs">
+
+    <label for="url">URL</label>
+    <input type="url" id="url" name="url" required placeholder="https://example.com/page">
+
+    <label for="selector">CSS selector <span class="hint">(optional &mdash; HTML targets only, narrows to one block)</span></label>
+    <input type="text" id="selector" name="selector" placeholder="#job-listings">
+
+    <label for="json_fields">JSON fields <span class="hint">(optional &mdash; for a .json feed URL, comma-separated field names)</span></label>
+    <input type="text" id="json_fields" name="json_fields" placeholder="position, company, tags">
+
+    <label for="webhook_url">Discord webhook override <span class="hint">(optional &mdash; defaults to DISCORD_WEBHOOK_URL)</span></label>
+    <input type="url" id="webhook_url" name="webhook_url" placeholder="https://discord.com/api/webhooks/...">
+
+    <div class="actions">
+      <button type="submit">Add target</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

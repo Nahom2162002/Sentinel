@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Sentinel &mdash; Setup needed{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>Something needs configuring</h2>
+  <div class="diff-preview">{{ message }}</div>
+  <p class="hint" style="margin-top: 16px;">
+    See the "Web dashboard (app.py) — deploy to Vercel" section of the README
+    for the full setup steps (provisioning Redis, setting env vars).
+  </p>
+</div>
+{% endblock %}

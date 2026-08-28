@@ -23,6 +23,27 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-insecure-secret-key")
 
 
+@app.errorhandler(Exception)
+def handle_error(exc: Exception):
+    """Show an actionable message instead of a blank Internal Server Error.
+
+    Vercel's default error page gives no detail, and the most common failure
+    mode here is a missing setup step (Redis not provisioned, env vars not
+    set) -- store.py already raises a RuntimeError with a specific fix for
+    those, so surface it directly. Anything else prints to stdout (visible
+    in Vercel's Runtime Logs) rather than leaking a traceback to the client.
+    """
+    if isinstance(exc, RuntimeError):
+        message = str(exc)
+    else:
+        print(f"Unhandled error: {exc!r}")
+        message = (
+            "Something went wrong processing this request. Check this "
+            "project's Runtime Logs in the Vercel dashboard for details."
+        )
+    return render_template("error.html", message=message), 500
+
+
 def _password_configured() -> bool:
     return bool(os.environ.get("DASHBOARD_PASSWORD"))
 

@@ -13,6 +13,7 @@ class Target:
     url: str
     selector: str | None
     webhook_url: str | None
+    json_fields: list[str] | None = None
 
 
 def load_config(path: str, default_webhook_url: str | None) -> list[Target]:
@@ -48,6 +49,7 @@ def load_config(path: str, default_webhook_url: str | None) -> list[Target]:
                 url=entry["url"],
                 selector=entry.get("selector"),
                 webhook_url=webhook_url,
+                json_fields=entry.get("json_fields"),
             )
         )
 

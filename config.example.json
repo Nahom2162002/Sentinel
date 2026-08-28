@@ -1,15 +1,15 @@
 {
   "targets": [
     {
-      "name": "Example Job Board Search",
-      "url": "https://example.com/jobs?tag=backend",
-      "selector": "#job-listings",
+      "name": "Example Job Board (JSON feed)",
+      "url": "https://remoteok.com/remote-software-jobs.json",
+      "json_fields": ["position", "company", "tags"],
       "webhook_url": null
     },
     {
-      "name": "Example Syllabus Page",
-      "url": "https://example.edu/courses/cs101/syllabus",
-      "selector": null,
+      "name": "Example Retail Page (HTML)",
+      "url": "https://example.com/product-category",
+      "selector": "#product-listings",
       "webhook_url": null
     }
   ]

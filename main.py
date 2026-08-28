@@ -29,7 +29,7 @@ def check_target(target: Target, state_dir: str, verbose: bool) -> None:
         print(f"[{target.name}] checking {target.url}")
 
     try:
-        raw_text = fetch_content(target.url, target.selector)
+        raw_text = fetch_content(target.url, target.selector, target.json_fields)
     except Exception as exc:  # network error, bad selector, non-200, etc.
         print(f"[{target.name}] ERROR: {exc}", file=sys.stderr)
         notify_error(target.webhook_url, target.name, target.url, str(exc))

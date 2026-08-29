@@ -43,9 +43,6 @@
       {% endif %}
 
       <div class="target-actions">
-        <form class="inline" method="post" action="{{ url_for('check_one', target_id=target.id) }}">
-          <button type="submit" class="secondary">Check now</button>
-        </form>
         <form class="inline" method="post" action="{{ url_for('delete_target', target_id=target.id) }}"
               onsubmit="return confirm('Remove {{ target.name }}?');">
           <button type="submit" class="danger">Delete</button>
@@ -53,14 +50,6 @@
       </div>
     </div>
   {% endfor %}
-
-  {% if targets %}
-  <div class="actions">
-    <form method="post" action="{{ url_for('check_all') }}">
-      <button type="submit">Check all now</button>
-    </form>
-  </div>
-  {% endif %}
 </div>
 
 <div class="panel">

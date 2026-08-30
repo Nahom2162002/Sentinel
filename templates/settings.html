@@ -1,0 +1,104 @@
+{% extends "app_shell.html" %}
+{% block title %}Sentinel &mdash; Settings{% endblock %}
+
+{% block head %}
+<style>
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 0; border-top:1px solid var(--border); cursor:pointer; }
+  .toggle { position:relative; width:38px; height:22px; flex:none; }
+  .toggle input { opacity:0; width:100%; height:100%; margin:0; cursor:pointer; position:absolute; z-index:2; }
+  .toggle .track { position:absolute; inset:0; border-radius:99px; background:var(--border-2); transition:background .15s; }
+  .toggle input:checked ~ .track { background:var(--accent); }
+  .toggle .knob { position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:99px; background:var(--muted-3); transition:transform .15s, background .15s; }
+  .toggle input:checked ~ .knob { transform:translateX(16px); background:var(--accent-ink); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding:34px clamp(24px,3.4vw,48px) 60px; max-width:760px">
+  <h1 style="margin:0 0 6px; font-size:26px; font-weight:600; letter-spacing:-.015em">Settings</h1>
+  <div style="color:var(--muted-1); font-size:13.5px; margin-bottom:30px">Most of these map to environment variables on the deployment.</div>
+
+  <form method="post">
+    <div style="display:flex; flex-direction:column; gap:16px">
+
+      <div style="border:1px solid var(--border); border-radius:14px; background:var(--bg-panel); padding:20px 22px">
+        <div class="label" style="margin-bottom:16px">DISCORD WEBHOOK</div>
+        <input type="url" name="webhook_url" placeholder="{{ webhook_masked or 'https://discord.com/api/webhooks/...' }}" style="width:100%" class="mono">
+        <div class="hint" style="margin-top:9px">
+          Default destination for every target that has no override. Leave blank to keep the current value
+          {% if settings.webhook_url %}&mdash; or <label style="text-decoration:underline; cursor:pointer"><input type="checkbox" name="clear_webhook" value="1" style="margin-right:4px">clear the override</label> to fall back to <span class="mono">DISCORD_WEBHOOK_URL</span>{% endif %}.
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--border); border-radius:14px; background:var(--bg-panel); padding:20px 22px">
+        <div class="label" style="margin-bottom:16px">SWEEP SCHEDULE</div>
+        <div style="font-size:14px; margin-bottom:6px">Configured externally &mdash; not controlled by this app</div>
+        <div class="hint">Sentinel has no built-in scheduler (Vercel Functions can't run a background loop). Checks are triggered by an outside pinger hitting <span class="mono">/api/cron-check</span>: cron-job.org every few minutes, with GitHub Actions and Vercel's own daily cron as backups. Change the interval there, not here.</div>
+      </div>
+
+      <div style="border:1px solid var(--border); border-radius:14px; background:var(--bg-panel); padding:20px 22px">
+        <div class="label" style="margin-bottom:4px">NOTIFY ON</div>
+
+        <label class="toggle-row">
+          <div>
+            <div style="font-size:14px; margin-bottom:3px">Content changes</div>
+            <div class="hint">The reason you're here.</div>
+          </div>
+          <div class="toggle">
+            <input type="checkbox" name="notify_content_changes" {{ 'checked' if settings.notify_content_changes else '' }}>
+            <div class="track"></div><div class="knob"></div>
+          </div>
+        </label>
+
+        <label class="toggle-row">
+          <div>
+            <div style="font-size:14px; margin-bottom:3px">Fetch errors</div>
+            <div class="hint">404s, timeouts, selector misses.</div>
+          </div>
+          <div class="toggle">
+            <input type="checkbox" name="notify_fetch_errors" {{ 'checked' if settings.notify_fetch_errors else '' }}>
+            <div class="track"></div><div class="knob"></div>
+          </div>
+        </label>
+
+        <label class="toggle-row">
+          <div>
+            <div style="font-size:14px; margin-bottom:3px">Every sweep</div>
+            <div class="hint">Noisy &mdash; a ping even when nothing moved.</div>
+          </div>
+          <div class="toggle">
+            <input type="checkbox" name="notify_every_sweep" {{ 'checked' if settings.notify_every_sweep else '' }}>
+            <div class="track"></div><div class="knob"></div>
+          </div>
+        </label>
+      </div>
+
+      <div style="border:1px solid var(--border); border-radius:14px; background:var(--bg-panel); padding:20px 22px">
+        <div class="label" style="margin-bottom:16px">STORAGE</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px">
+          <div>
+            <div style="font-size:14px; margin-bottom:3px">Upstash Redis &mdash; connected</div>
+            <div class="mono" style="font-size:11.5px; color:var(--muted-3)">{{ target_count }} target{{ '' if target_count == 1 else 's' }} &middot; {{ state_key_count }} state key{{ '' if state_key_count == 1 else 's' }}</div>
+          </div>
+          <span class="dot changed"></span>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end">
+        <button type="submit" class="btn">Save settings</button>
+      </div>
+    </div>
+  </form>
+
+  <form method="post" onsubmit="return confirm('Reset every target\'s baseline? The next sweep on each will re-baseline instead of diffing.');" style="margin-top:16px">
+    <input type="hidden" name="action" value="reset_baselines">
+    <div style="border:1px solid var(--bad-border-dim); border-radius:14px; background:var(--bad-bg-dim); padding:20px 22px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap">
+      <div>
+        <div style="font-size:14px; margin-bottom:3px; color:var(--bad)">Reset all baselines</div>
+        <div style="color:var(--muted-1); font-size:12.5px">Clears stored content and history so the next sweep re-baselines every target.</div>
+      </div>
+      <button type="submit" class="btn-danger" style="flex:none">Reset</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

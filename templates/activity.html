@@ -1,0 +1,27 @@
+{% extends "app_shell.html" %}
+{% block title %}Sentinel &mdash; Activity{% endblock %}
+
+{% block content %}
+<div style="padding:34px clamp(24px,3.4vw,48px) 60px; max-width:900px">
+  <h1 style="margin:0 0 6px; font-size:26px; font-weight:600; letter-spacing:-.015em">Activity</h1>
+  <div style="color:var(--muted-1); font-size:13.5px; margin-bottom:28px">Every check Sentinel has run, newest first.</div>
+
+  {% if not entries %}
+    <div class="empty">No checks recorded yet &mdash; add a target and it'll show up here after the first sweep.</div>
+  {% endif %}
+
+  <div style="display:flex; flex-direction:column">
+    {% for e in entries %}
+      <div style="display:grid; grid-template-columns:96px 20px 1fr auto; gap:16px; align-items:center; padding:14px 4px; border-bottom:1px solid var(--border-row)">
+        <div class="mono" style="font-size:11.5px; color:var(--muted-3)">{{ e.time|ago }}</div>
+        <span class="dot {{ e.status }}"></span>
+        <div style="min-width:0">
+          <div style="font-size:14px; margin-bottom:2px">{{ e.target_name }}</div>
+          <div style="font-size:12.5px; color:var(--muted-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ e.note }}</div>
+        </div>
+        <span class="pill {{ e.status }}">{{ e.status|upper }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

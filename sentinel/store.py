@@ -13,6 +13,15 @@ import requests
 
 TIMEOUT_SECONDS = 10
 TARGETS_KEY = "sentinel:targets"
+SETTINGS_KEY = "sentinel:settings"
+HISTORY_CAP = 60
+
+DEFAULT_SETTINGS = {
+    "webhook_url": None,
+    "notify_content_changes": True,
+    "notify_fetch_errors": True,
+    "notify_every_sweep": False,
+}
 
 
 def _rest_url() -> str:
@@ -55,6 +64,10 @@ def _state_key(target_id: str) -> str:
     return f"sentinel:state:{target_id}"
 
 
+def _history_key(target_id: str) -> str:
+    return f"sentinel:history:{target_id}"
+
+
 def get_targets() -> list[dict]:
     raw = _command("GET", TARGETS_KEY)
     return json.loads(raw) if raw else []
@@ -75,3 +88,43 @@ def save_state(target_id: str, state: dict) -> None:
 
 def delete_state(target_id: str) -> None:
     _command("DEL", _state_key(target_id))
+
+
+def append_history(target_id: str, entry: dict) -> None:
+    """Record one check outcome. Keeps only the most recent HISTORY_CAP
+    entries -- backs the dashboard sparklines, the per-target check-history
+    list, and the merged Activity feed, without unbounded growth."""
+    key = _history_key(target_id)
+    _command("RPUSH", key, json.dumps(entry))
+    _command("LTRIM", key, -HISTORY_CAP, -1)
+
+
+def get_history(target_id: str, limit: int | None = None) -> list[dict]:
+    """Most-recent-last list of check entries. `limit` returns only the tail."""
+    key = _history_key(target_id)
+    start = -limit if limit else 0
+    raw = _command("LRANGE", key, start, -1)
+    return [json.loads(item) for item in (raw or [])]
+
+
+def delete_history(target_id: str) -> None:
+    _command("DEL", _history_key(target_id))
+
+
+def get_settings() -> dict:
+    raw = _command("GET", SETTINGS_KEY)
+    settings = dict(DEFAULT_SETTINGS)
+    if raw:
+        settings.update(json.loads(raw))
+    return settings
+
+
+def save_settings(settings: dict) -> None:
+    merged = get_settings()
+    merged.update(settings)
+    _command("SET", SETTINGS_KEY, json.dumps(merged))
+
+
+def count_keys(pattern: str) -> int:
+    """Real (not decorative) key count for the Settings storage panel."""
+    return len(_command("KEYS", pattern) or [])

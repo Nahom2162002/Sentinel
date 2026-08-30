@@ -1,79 +1,152 @@
-{% extends "base.html" %}
-{% block title %}Sentinel &mdash; Dashboard{% endblock %}
-
-{% block header_actions %}
-{% if password_set %}
-<form method="post" action="{{ url_for('logout') }}">
-  <button type="submit" class="secondary">Log out</button>
-</form>
-{% endif %}
-{% endblock %}
+{% extends "app_shell.html" %}
+{% block title %}Sentinel &mdash; Targets{% endblock %}
 
 {% block content %}
-
-<div class="panel">
-  <h2>Watched targets</h2>
-
-  {% if not targets %}
-    <p class="empty">No targets yet &mdash; add one below.</p>
-  {% endif %}
-
-  {% for target in targets %}
-    {% set state = target.state %}
-    <div class="target">
-      <div class="target-top">
-        <div>
-          <div class="target-name">{{ target.name }}</div>
-          <div class="target-url"><a href="{{ target.url }}" target="_blank" style="color: inherit;">{{ target.url }}</a></div>
-        </div>
-        {% if state %}
-          <span class="badge {{ state.last_status }}">{{ state.last_status }}</span>
-        {% else %}
-          <span class="badge never">never checked</span>
-        {% endif %}
-      </div>
-
-      {% if state %}
-        <div class="meta-row">Last checked: {{ state.last_checked[:19].replace('T', ' ') }} UTC</div>
-        {% if state.last_status == 'error' %}
-          <div class="diff-preview">{{ state.last_error }}</div>
-        {% elif state.last_diff %}
-          <div class="diff-preview">{{ state.last_diff }}</div>
-        {% endif %}
+<div style="padding:34px clamp(24px,3.4vw,48px) 60px; max-width:1180px">
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:26px; flex-wrap:wrap">
+    <div>
+      <h1 style="margin:0 0 6px; font-size:26px; font-weight:600; letter-spacing:-.015em">Watched targets</h1>
+      <div style="color:var(--muted-1); font-size:13.5px">{{ all_count }} target{{ '' if all_count == 1 else 's' }} &middot; {{ changed_count }} changed &middot; {{ error_count }} failing</div>
+    </div>
+    <div style="display:flex; gap:10px">
+      {% if all_count %}
+      <form method="post" action="{{ url_for('check_all') }}">
+        <input type="hidden" name="next" value="{{ request.full_path }}">
+        <button type="submit" class="btn-ghost">Sweep all</button>
+      </form>
       {% endif %}
+      <button type="button" class="btn" onclick="document.getElementById('add-modal').style.display='grid'">Add target</button>
+    </div>
+  </div>
 
-      <div class="target-actions">
-        <form class="inline" method="post" action="{{ url_for('delete_target', target_id=target.id) }}"
-              onsubmit="return confirm('Remove {{ target.name }}?');">
-          <button type="submit" class="danger">Delete</button>
-        </form>
+  <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:30px">
+    <div style="border:1px solid var(--border); background:var(--bg-panel); border-radius:12px; padding:16px 18px">
+      <div class="label" style="margin-bottom:10px">WATCHING</div>
+      <div style="display:flex; align-items:baseline; gap:8px"><div style="font-size:27px; font-weight:600; letter-spacing:-.02em">{{ all_count }}</div><div style="font-size:12px; color:var(--muted-4)">targets</div></div>
+    </div>
+    <div style="border:1px solid var(--border); background:var(--bg-panel); border-radius:12px; padding:16px 18px">
+      <div class="label" style="margin-bottom:10px">CHANGED</div>
+      <div style="display:flex; align-items:baseline; gap:8px"><div style="font-size:27px; font-weight:600; letter-spacing:-.02em; color:var(--good)">{{ changed_count }}</div><div style="font-size:12px; color:var(--muted-4)">since baseline</div></div>
+    </div>
+    <div style="border:1px solid var(--border); background:var(--bg-panel); border-radius:12px; padding:16px 18px">
+      <div class="label" style="margin-bottom:10px">FAILING</div>
+      <div style="display:flex; align-items:baseline; gap:8px"><div style="font-size:27px; font-weight:600; letter-spacing:-.02em; {{ 'color:var(--bad)' if error_count else '' }}">{{ error_count }}</div><div style="font-size:12px; color:var(--muted-4)">target{{ '' if error_count == 1 else 's' }}</div></div>
+    </div>
+    <div style="border:1px solid var(--border); background:var(--bg-panel); border-radius:12px; padding:16px 18px">
+      <div class="label" style="margin-bottom:10px">LAST SWEEP</div>
+      <div style="display:flex; align-items:baseline; gap:8px"><div style="font-size:27px; font-weight:600; letter-spacing:-.02em">{{ last_sweep }}</div></div>
+    </div>
+  </div>
+
+  {% if all_count %}
+  <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap">
+    {% for f in ["ALL", "CHANGED", "UNCHANGED", "ERROR", "BASELINE"] %}
+      <a href="{{ url_for('dashboard', filter=f) }}" class="mono" style="text-decoration:none; font-size:11px; letter-spacing:.1em; padding:6px 11px; border-radius:7px; border:1px solid var(--border); {{ 'background:' + 'rgba(75,147,247,.12); border-color:#4B93F766; color:var(--text)' if current_filter == f else 'color:var(--muted-2)' }}">{{ f }}</a>
+    {% endfor %}
+  </div>
+
+  <div style="border:1px solid var(--border); border-radius:14px; overflow-x:auto; background:var(--bg-panel-2)">
+    <div style="display:grid; grid-template-columns:minmax(230px,1fr) 132px 108px 112px 88px; gap:16px; padding:11px 20px; border-bottom:1px solid var(--border); font-size:10px; letter-spacing:.14em; color:var(--muted-4); background:var(--bg-header)" class="mono">
+      <div>TARGET</div><div>LAST 12 CHECKS</div><div>STATE</div><div>CHECKED</div><div></div>
+    </div>
+    {% for target in targets %}
+      {% set state = target.state %}
+      <div style="border-bottom:1px solid var(--border-row)">
+        <a href="{{ url_for('target_detail', target_id=target.id) }}" style="text-decoration:none; color:inherit; display:grid; grid-template-columns:minmax(230px,1fr) 132px 108px 112px 88px; gap:16px; align-items:center; padding:15px 20px">
+          <div style="min-width:0; display:flex; align-items:center; gap:12px">
+            <span class="dot {{ state.last_status if state else 'never' }}"></span>
+            <div style="min-width:0">
+              <div style="font-size:14.5px; font-weight:500; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ target.name }}</div>
+              <div class="mono" style="font-size:11.5px; color:var(--muted-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ target.url }}</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:3px; align-items:flex-end; height:20px">
+            {% for h in target.sparkline %}
+              {% set ht = 5 if h.status == 'never' else (18 if h.status == 'changed' else (14 if h.status == 'error' else 9)) %}
+              <div style="width:6px; border-radius:2px; height:{{ ht }}px; background:{{ 'var(--border-input)' if h.status == 'never' else 'var(--good)' if h.status == 'changed' else 'var(--warn)' if h.status == 'baseline' else 'var(--bad)' if h.status == 'error' else 'var(--muted-1)' }}; opacity:{{ '.5' if h.status == 'unchanged' else '1' }}"></div>
+            {% endfor %}
+          </div>
+          <div><span class="pill {{ state.last_status if state else 'never' }}">{{ (state.last_status if state else 'never')|upper }}</span></div>
+          <div class="mono" style="font-size:11.5px; color:var(--muted-1)">{{ state.last_checked|ago if state else 'never' }}</div>
+          <div></div>
+        </a>
       </div>
-    </div>
-  {% endfor %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="border:1px dashed var(--border-input); border-radius:14px; padding:54px; text-align:center; margin-top:14px">
+    <div style="font-size:15px; margin-bottom:6px">Nothing being watched yet</div>
+    <div style="color:var(--muted-1); font-size:13.5px; margin-bottom:20px">Point Sentinel at a page or JSON feed and it will baseline it on the next sweep.</div>
+    <button type="button" class="btn" onclick="document.getElementById('add-modal').style.display='grid'">Add your first target</button>
+  </div>
+  {% endif %}
 </div>
 
-<div class="panel">
-  <h2>Add a target</h2>
-  <form method="post" action="{{ url_for('add_target') }}">
-    <label for="name">Name</label>
-    <input type="text" id="name" name="name" required placeholder="RemoteOK Software Jobs">
-
-    <label for="url">URL</label>
-    <input type="url" id="url" name="url" required placeholder="https://example.com/page">
-
-    <label for="selector">CSS selector <span class="hint">(optional &mdash; HTML targets only, narrows to one block)</span></label>
-    <input type="text" id="selector" name="selector" placeholder="#job-listings">
-
-    <label for="json_fields">JSON fields <span class="hint">(optional &mdash; for a .json feed URL, comma-separated field names)</span></label>
-    <input type="text" id="json_fields" name="json_fields" placeholder="position, company, tags">
-
-    <label for="webhook_url">Discord webhook override <span class="hint">(optional &mdash; defaults to DISCORD_WEBHOOK_URL)</span></label>
-    <input type="url" id="webhook_url" name="webhook_url" placeholder="https://discord.com/api/webhooks/...">
-
-    <div class="actions">
-      <button type="submit">Add target</button>
+<div id="add-modal" style="display:none; position:fixed; inset:0; background:rgba(6,7,9,.72); place-items:center; padding:24px; z-index:50" onclick="document.getElementById('add-modal').style.display='none'">
+  <div onclick="event.stopPropagation()" style="width:560px; max-width:100%; background:var(--bg-panel); border:1px solid var(--border-input); border-radius:16px; padding:26px 28px; box-shadow:0 30px 80px rgba(0,0,0,.6)">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+      <h2 style="margin:0; font-size:19px; font-weight:600">Add a target</h2>
+      <span onclick="document.getElementById('add-modal').style.display='none'" style="color:var(--muted-2); cursor:pointer; font-size:18px; line-height:1">&times;</span>
     </div>
-  </form>
+    <div style="color:var(--muted-1); font-size:13px; margin-bottom:22px">The first sweep records a baseline; you get pinged from the second one on.</div>
+
+    <form method="post" action="{{ url_for('add_target') }}">
+      <div style="display:flex; flex-direction:column; gap:16px">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+          <div style="display:flex; flex-direction:column; gap:7px">
+            <label class="label">NAME</label>
+            <input type="text" name="name" required placeholder="RemoteOK Software Jobs">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:7px">
+            <label class="label">URL</label>
+            <input type="url" name="url" required placeholder="https://example.com/page">
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border); padding-top:16px">
+          <div class="label" style="margin-bottom:10px">WHAT TO WATCH &mdash; OPTIONAL</div>
+          <div style="display:flex; gap:8px; margin-bottom:12px">
+            <button type="button" data-mode="whole" onclick="setAddMode('whole')" class="mode-btn" style="flex:1; text-align:center; padding:9px 0; border:1px solid var(--border-input); border-radius:9px; font-size:13px; background:rgba(75,147,247,.12); border-color:#4B93F766">Whole page</button>
+            <button type="button" data-mode="selector" onclick="setAddMode('selector')" class="mode-btn" style="flex:1; text-align:center; padding:9px 0; border:1px solid var(--border-input); border-radius:9px; font-size:13px; color:var(--muted-1)">CSS selector</button>
+            <button type="button" data-mode="json" onclick="setAddMode('json')" class="mode-btn" style="flex:1; text-align:center; padding:9px 0; border:1px solid var(--border-input); border-radius:9px; font-size:13px; color:var(--muted-1)">JSON fields</button>
+          </div>
+          <input type="text" id="selector" name="selector" placeholder="#job-listings" style="width:100%; display:none;" class="mono">
+          <input type="text" id="json_fields" name="json_fields" placeholder="position, company, tags" style="width:100%; display:none;" class="mono">
+          <div class="hint" id="mode-hint" style="margin-top:8px">Diffs the full readable text of the page.</div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:7px; border-top:1px solid var(--border); padding-top:16px">
+          <label class="label">WEBHOOK OVERRIDE &mdash; OPTIONAL</label>
+          <input type="url" name="webhook_url" placeholder="Falls back to the project default" class="mono">
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:24px">
+        <button type="button" class="btn-ghost" onclick="document.getElementById('add-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn">Add target</button>
+      </div>
+    </form>
+  </div>
 </div>
 
+<script>
+function setAddMode(mode) {
+  document.querySelectorAll('.mode-btn').forEach(function(btn) {
+    var on = btn.getAttribute('data-mode') === mode;
+    btn.style.background = on ? 'rgba(75,147,247,.12)' : 'transparent';
+    btn.style.borderColor = on ? '#4B93F766' : 'var(--border-input)';
+    btn.style.color = on ? 'var(--text)' : 'var(--muted-1)';
+  });
+  var selector = document.getElementById('selector');
+  var jsonFields = document.getElementById('json_fields');
+  var hint = document.getElementById('mode-hint');
+  selector.style.display = mode === 'selector' ? 'block' : 'none';
+  jsonFields.style.display = mode === 'json' ? 'block' : 'none';
+  if (mode !== 'selector') selector.value = '';
+  if (mode !== 'json') jsonFields.value = '';
+  if (mode === 'selector') hint.textContent = 'Narrows the diff to one block — fewer false pings.';
+  else if (mode === 'json') hint.textContent = 'For .json feeds: only these fields are compared.';
+  else hint.textContent = 'Diffs the full readable text of the page.';
+}
+</script>
 {% endblock %}

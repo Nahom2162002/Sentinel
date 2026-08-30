@@ -1,0 +1,115 @@
+{% extends "app_shell.html" %}
+{% block title %}Sentinel &mdash; {{ target.name }}{% endblock %}
+
+{% block content %}
+<div style="padding:34px clamp(24px,3.4vw,48px) 60px; max-width:1180px">
+  <a href="{{ url_for('dashboard') }}" class="mono" style="font-size:11px; letter-spacing:.12em; color:var(--muted-2); text-decoration:none; margin-bottom:20px; display:inline-block">&larr; ALL TARGETS</a>
+
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:28px; flex-wrap:wrap">
+    <div style="min-width:0">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap">
+        <h1 style="margin:0; font-size:26px; font-weight:600; letter-spacing:-.015em">{{ target.name }}</h1>
+        <span class="pill {{ state.last_status if state else 'never' }}">{{ (state.last_status if state else 'never')|upper }}</span>
+      </div>
+      <a href="{{ target.url }}" target="_blank" class="mono" style="font-size:12.5px; color:var(--muted-3); text-decoration:none">{{ target.url }} &#8599;</a>
+    </div>
+    <div style="display:flex; gap:10px; flex:none">
+      <form method="post" action="{{ url_for('check_one', target_id=target.id) }}">
+        <input type="hidden" name="next" value="{{ url_for('target_detail', target_id=target.id) }}">
+        <button type="submit" class="btn-ghost">Check now</button>
+      </form>
+      <form method="post" action="{{ url_for('delete_target', target_id=target.id) }}" onsubmit="return confirm('Remove {{ target.name }}?');">
+        <button type="submit" class="btn-danger">Delete</button>
+      </form>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1.55fr 1fr; gap:16px; align-items:start">
+    <div style="display:flex; flex-direction:column; gap:16px; min-width:0">
+      <div style="border:1px solid var(--border); border-radius:14px; background:var(--bg-panel-2); overflow:hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border); background:var(--bg-header)">
+          <div class="label">LATEST DIFF</div>
+          <div style="display:flex; gap:12px" class="mono">
+            <span style="color:var(--good)">+{{ diff.added|length }} added</span>
+            <span style="color:var(--bad)">-{{ diff.removed|length }} removed</span>
+          </div>
+        </div>
+        <div style="padding:16px 18px; display:flex; flex-direction:column; gap:4px; overflow-x:auto">
+          {% if diff.legacy_text %}
+            <div class="mono" style="font-size:12px; white-space:pre-wrap; color:var(--muted-1)">{{ diff.legacy_text }}</div>
+          {% elif state and state.last_status == 'error' %}
+            <div style="display:flex; gap:12px; font-family:var(--mono); font-size:12.5px; line-height:1.55; padding:2px 8px; border-radius:5px; background:rgba(233,131,111,.09); color:var(--bad)">
+              <span style="color:var(--muted-4); flex:none; width:16px; text-align:right">!</span>
+              <span style="flex:1; white-space:pre-wrap">{{ state.last_error }}</span>
+            </div>
+          {% elif diff.added|length + diff.removed|length == 0 %}
+            <div style="display:flex; gap:12px; font-family:var(--mono); font-size:12.5px; color:var(--muted-3)">
+              <span style="width:16px; text-align:right">&mdash;</span><span>No differences on the last check.</span>
+            </div>
+          {% else %}
+            {% for line in diff.added %}
+              <div style="display:flex; gap:12px; font-family:var(--mono); font-size:12.5px; line-height:1.55; padding:2px 8px; border-radius:5px; background:rgba(95,208,138,.08); color:#9BE2BB">
+                <span style="color:var(--muted-4); flex:none; width:26px; text-align:right">{{ loop.index }}</span>
+                <span style="flex:1; white-space:pre-wrap">+ {{ line }}</span>
+              </div>
+            {% endfor %}
+            {% for line in diff.removed %}
+              <div style="display:flex; gap:12px; font-family:var(--mono); font-size:12.5px; line-height:1.55; padding:2px 8px; border-radius:5px; background:rgba(233,131,111,.07); color:#F0A897">
+                <span style="color:var(--muted-4); flex:none; width:26px; text-align:right">{{ diff.added|length + loop.index }}</span>
+                <span style="flex:1; white-space:pre-wrap">- {{ line }}</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--border); border-radius:14px; background:var(--bg-panel-2); overflow:hidden">
+        <div class="label" style="padding:14px 18px; border-bottom:1px solid var(--border); background:var(--bg-header)">CHECK HISTORY</div>
+        {% if not history %}
+          <div class="empty" style="padding:16px 18px">No checks recorded yet.</div>
+        {% endif %}
+        {% for h in history %}
+          <div style="display:grid; grid-template-columns:16px 130px 1fr; gap:14px; align-items:center; padding:12px 18px; border-bottom:1px solid var(--border-row)">
+            <span class="dot {{ h.status }}"></span>
+            <div class="mono" style="font-size:11.5px; color:var(--muted-1)">{{ h.time|ago }}</div>
+            <div style="font-size:13px; color:#B6BCC4">{{ h.note }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px">
+      <div style="border:1px solid var(--border); border-radius:14px; background:var(--bg-panel); padding:18px">
+        <div class="label" style="margin-bottom:14px">EXTRACTION</div>
+        <div style="display:flex; justify-content:space-between; gap:14px; padding:9px 0; border-top:1px solid var(--border)">
+          <div style="font-size:13px; color:var(--muted-1); flex:none">Mode</div>
+          <div class="mono" style="font-size:12px; text-align:right">{{ mode }}</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; gap:14px; padding:9px 0; border-top:1px solid var(--border)">
+          <div style="font-size:13px; color:var(--muted-1); flex:none">CSS selector</div>
+          <div class="mono" style="font-size:12px; text-align:right; overflow-wrap:anywhere; {{ 'color:var(--accent)' if target.selector else 'color:var(--muted-3)' }}">{{ target.selector or '— whole page' }}</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; gap:14px; padding:9px 0; border-top:1px solid var(--border)">
+          <div style="font-size:13px; color:var(--muted-1); flex:none">JSON fields</div>
+          <div class="mono" style="font-size:12px; text-align:right; overflow-wrap:anywhere; {{ 'color:var(--accent)' if target.json_fields else 'color:var(--muted-3)' }}">{{ target.json_fields|join(', ') if target.json_fields else '—' }}</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; gap:14px; padding:9px 0; border-top:1px solid var(--border)">
+          <div style="font-size:13px; color:var(--muted-1); flex:none">Target ID</div>
+          <div class="mono" style="font-size:12px; text-align:right; color:var(--muted-3)">{{ target.id }}</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--border); border-radius:14px; background:var(--bg-panel); padding:18px">
+        <div class="label" style="margin-bottom:12px">NOTIFICATION</div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px">
+          <span class="dot {{ 'changed' if webhook_masked else 'never' }}"></span>
+          <div style="font-size:13.5px">{{ 'Discord — ' + ('target override' if target.webhook_url else 'project default') if webhook_masked else 'No webhook configured' }}</div>
+        </div>
+        {% if webhook_masked %}
+        <div class="mono" style="font-size:11.5px; color:var(--muted-3); word-break:break-all; background:var(--bg-header); border:1px solid var(--border); border-radius:8px; padding:9px 11px">{{ webhook_masked }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

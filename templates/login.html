@@ -1,14 +1,36 @@
 {% extends "base.html" %}
 {% block title %}Sentinel &mdash; Log in{% endblock %}
-{% block content %}
-<div class="panel" style="max-width: 360px; margin: 60px auto 0;">
-  <h2>Log in</h2>
-  <form method="post">
-    <label for="password">Dashboard password</label>
-    <input type="password" id="password" name="password" autofocus>
-    <div class="actions">
-      <button type="submit">Log in</button>
+{% block body %}
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:0 clamp(24px,7vw,120px)">
+  <div style="width:100%; max-width:440px">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:56px">
+      <div style="width:26px; height:26px; border:1.5px solid var(--dim); border-radius:7px; display:grid; place-items:center">
+        <div style="width:8px; height:8px; border-radius:99px; background:var(--accent); animation:pulse 2.4s ease-in-out infinite"></div>
+      </div>
+      <div style="font-size:15px; font-weight:700; letter-spacing:.16em">SENTINEL</div>
     </div>
-  </form>
+    <div class="mono" style="font-size:11px; letter-spacing:.18em; color:var(--muted-2); margin-bottom:14px">RESTRICTED &middot; DASHBOARD</div>
+    <h1 style="margin:0 0 12px; font-size:40px; line-height:1.1; font-weight:600; letter-spacing:-.02em">Watch the web.<br>Get pinged.</h1>
+    <p style="margin:0 0 40px; color:var(--muted-1); font-size:15px; max-width:38ch">Sentinel diffs the pages you care about on a schedule and posts what changed to your Discord.</p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post">
+      <div style="display:flex; flex-direction:column; gap:8px; max-width:400px">
+        <label for="password" class="label">DASHBOARD PASSWORD</label>
+        <div style="display:flex; gap:8px">
+          <input id="password" name="password" type="password" autofocus style="flex:1; letter-spacing:.1em">
+          <button type="submit" class="btn" style="white-space:nowrap">Log in</button>
+        </div>
+        <div class="hint" style="margin-top:4px">Single shared password, set via <span class="mono" style="color:var(--muted-2)">DASHBOARD_PASSWORD</span>.</div>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

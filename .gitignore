@@ -1,5 +1,13 @@
 .env
 config.json
+.claude/
+
+# Claude Design canvas import (source of record lives in claude.ai/design, not deployed)
+Sentinel Redesign.dc.html
+support.js
+github.md
+.thumbnail
+uploads/
 state/*.json
 !state/.gitkeep
 __pycache__/

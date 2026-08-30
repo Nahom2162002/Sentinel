@@ -4,124 +4,99 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Sentinel{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f1115;
-      --panel: #171a21;
-      --border: #2a2e37;
-      --text: #e6e8eb;
-      --muted: #8b909c;
-      --accent: #5b8cff;
-      --good: #2ecc71;
-      --bad: #e74c3c;
-      --warn: #f1c40f;
+      --bg: #0A0B0D;
+      --bg-header: #0C0D10;
+      --bg-panel-2: #0E0F12;
+      --bg-panel: #101215;
+      --border: #1C1F24;
+      --border-row: #17191D;
+      --border-input: #23272E;
+      --border-hover: #3A4149;
+      --border-2: #2A2F36;
+      --text: #E8EAED;
+      --muted-1: #8A9099;
+      --muted-2: #7E858E;
+      --muted-3: #6C737C;
+      --muted-4: #5A6169;
+      --dim: #3A4149;
+      --accent: #4B93F7;
+      --accent-hover: #6BA6F9;
+      --accent-ink: #06131F;
+      --good: #5FD08A;
+      --warn: #E8C15F;
+      --bad: #E9836F;
+      --bad-border: #5E2E36;
+      --bad-border-dim: #43242A;
+      --bad-bg: #1B1113;
+      --bad-bg-dim: #120E10;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
+      font-family: Archivo, Helvetica, sans-serif;
+      -webkit-font-smoothing: antialiased;
       line-height: 1.5;
     }
-    header {
-      padding: 24px 32px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    header h1 { font-size: 1.25rem; margin: 0; }
-    header h1 span { color: var(--muted); font-weight: normal; }
-    main { max-width: 900px; margin: 0 auto; padding: 32px; }
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px 24px;
-      margin-bottom: 24px;
-    }
-    .panel h2 { margin-top: 0; font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    label { display: block; font-size: 0.85rem; color: var(--muted); margin-top: 12px; margin-bottom: 4px; }
+    a { color: var(--text); }
+    a:hover { color: #fff; }
+    input, button, select { font-family: inherit; }
+    input:focus { outline: none; }
+    ::placeholder { color: var(--muted-4); }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: var(--border-input); border-radius: 8px; }
+    @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+
+    .mono { font-family: var(--mono); }
+    .label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--muted-2); }
+
     input[type=text], input[type=url], input[type=password] {
-      width: 100%;
-      padding: 8px 10px;
-      background: #0f1115;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      background: var(--bg-header);
+      border: 1px solid var(--border-input);
+      border-radius: 9px;
+      padding: 11px 13px;
       color: var(--text);
-      font-size: 0.95rem;
+      font-size: 13.5px;
     }
-    button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 9px 16px;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-    button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    button.danger { background: transparent; border: 1px solid var(--bad); color: var(--bad); }
-    button:hover { opacity: 0.85; }
+    input[type=text]:focus, input[type=url]:focus, input[type=password]:focus { border-color: var(--accent); }
+
+    button { cursor: pointer; }
+    .btn { background: var(--accent); border: none; border-radius: 9px; padding: 10px 18px; color: var(--accent-ink); font-size: 13.5px; font-weight: 600; }
+    .btn:hover { background: var(--accent-hover); }
+    .btn-ghost { background: transparent; border: 1px solid var(--border-2); border-radius: 9px; padding: 10px 16px; color: var(--text); font-size: 13.5px; font-weight: 500; }
+    .btn-ghost:hover { border-color: var(--border-hover); background: var(--bg-header); }
+    .btn-danger { background: transparent; border: 1px solid var(--bad-border-dim); border-radius: 9px; padding: 10px 16px; color: var(--bad); font-size: 13.5px; font-weight: 500; }
+    .btn-danger:hover { background: var(--bad-bg); border-color: var(--bad-border); }
     form.inline { display: inline; }
-    .actions { margin-top: 16px; display: flex; gap: 10px; }
-    .target {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 18px;
-      margin-bottom: 14px;
-    }
-    .target-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-    .target-name { font-weight: 600; font-size: 1.02rem; }
-    .target-url { color: var(--muted); font-size: 0.82rem; word-break: break-all; }
-    .badge {
-      display: inline-block;
-      font-size: 0.75rem;
-      padding: 2px 9px;
-      border-radius: 999px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .badge.baseline { background: rgba(241,196,15,0.15); color: var(--warn); }
-    .badge.unchanged { background: rgba(139,144,156,0.15); color: var(--muted); }
-    .badge.changed { background: rgba(46,204,113,0.15); color: var(--good); }
-    .badge.error { background: rgba(231,76,60,0.15); color: var(--bad); }
-    .badge.never { background: rgba(139,144,156,0.1); color: var(--muted); }
-    .diff-preview {
-      margin-top: 10px;
-      background: #0f1115;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.8rem;
-      white-space: pre-wrap;
-      color: var(--text);
-      max-height: 160px;
-      overflow-y: auto;
-    }
-    .meta-row { margin-top: 8px; font-size: 0.8rem; color: var(--muted); }
-    .target-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .flash { background: rgba(91,140,255,0.12); border: 1px solid var(--accent); color: var(--text); padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; }
-    .empty { color: var(--muted); font-size: 0.9rem; }
-    .hint { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+
+    .pill { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; padding: 4px 9px; border-radius: 6px; white-space: nowrap; }
+    .pill.changed { background: rgba(95,208,138,.12); color: var(--good); }
+    .pill.unchanged { background: rgba(138,144,153,.12); color: var(--muted-1); }
+    .pill.baseline { background: rgba(232,193,95,.13); color: var(--warn); }
+    .pill.error { background: rgba(233,131,111,.13); color: var(--bad); }
+    .pill.never { background: rgba(108,115,124,.1); color: var(--muted-3); }
+
+    .dot { width: 8px; height: 8px; border-radius: 99px; flex: none; display: inline-block; }
+    .dot.changed { background: var(--good); }
+    .dot.unchanged { background: var(--muted-1); }
+    .dot.baseline { background: var(--warn); }
+    .dot.error { background: var(--bad); }
+    .dot.never { background: var(--dim); }
+
+    .flash { background: rgba(75,147,247,.1); border: 1px solid var(--accent); color: var(--text); padding: 10px 14px; border-radius: 9px; margin-bottom: 16px; font-size: 13px; }
+    .hint { color: var(--muted-3); font-size: 12.5px; }
+    .empty { color: var(--muted-1); font-size: 13.5px; }
   </style>
+  {% block head %}{% endblock %}
 </head>
 <body>
-  <header>
-    <h1>Sentinel <span>&mdash; change watcher</span></h1>
-    {% block header_actions %}{% endblock %}
-  </header>
-  <main>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for message in messages %}
-          <div class="flash">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
+{% block body %}{% endblock %}
 </body>
 </html>
